@@ -1,20 +1,31 @@
 import pyttsx3
 import wikipedia
-import speech_recognition as sr
 import webbrowser
 import datetime
 import os
 import sys
 import smtplib
 from news import speak_news, getNewsUrl
-from OCR import OCR
-from diction import translate
 from helpers import *
-from youtube import youtube
 from sys import platform
 import os
 import getpass
 import cv2
+
+try:
+    from OCR import OCR
+except Exception:
+    OCR = None
+
+try:
+    from diction import translate
+except Exception:
+    translate = None
+
+try:
+    from youtube import youtube
+except Exception:
+    youtube = None
 
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
@@ -24,20 +35,29 @@ engine.setProperty('voice', voices[0].id)
 
 class Jarvis:
     def __init__(self) -> None:
+        self.has_chrome = False
         if platform == "linux" or platform == "linux2":
             self.chrome_path = '/usr/bin/google-chrome'
 
         elif platform == "darwin":
-            self.chrome_path = 'open -a /Applications/Google\ Chrome.app'
+            self.chrome_path = 'open -a /Applications/Google Chrome.app'
 
         elif platform == "win32":
-            self.chrome_path = 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'
+            self.chrome_path = r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'
         else:
-            print('Unsupported OS')
-            exit(1)
-        webbrowser.register(
-            'chrome', None, webbrowser.BackgroundBrowser(self.chrome_path)
-        )
+            self.chrome_path = None
+
+        if self.chrome_path and (platform != "win32" or os.path.exists(self.chrome_path)):
+            webbrowser.register(
+                'chrome', None, webbrowser.BackgroundBrowser(self.chrome_path)
+            )
+            self.has_chrome = True
+
+    def open_url(self, url: str) -> None:
+        if self.has_chrome:
+            webbrowser.get('chrome').open_new_tab(url)
+        else:
+            webbrowser.open_new_tab(url)
 
     def wishMe(self) -> None:
         hour = int(datetime.datetime.now().hour)
@@ -89,11 +109,10 @@ class Jarvis:
          
 
         elif 'open youtube' in query:
-
-            webbrowser.get('chrome').open_new_tab('https://youtube.com')
+            self.open_url('https://youtube.com')
             
         elif 'open amazon' in query:
-            webbrowser.get('chrome').open_new_tab('https://amazon.com')
+            self.open_url('https://amazon.com')
 
         elif 'cpu' in query:
             cpu()
@@ -106,17 +125,20 @@ class Jarvis:
             screenshot()
 
         elif 'open google' in query:
-            webbrowser.get('chrome').open_new_tab('https://google.com')
+            self.open_url('https://google.com')
 
         elif 'open stackoverflow' in query:
-            webbrowser.get('chrome').open_new_tab('https://stackoverflow.com')
+            self.open_url('https://stackoverflow.com')
 
         elif 'play music' in query:
             os.startfile("D:\\RoiNa.mp3")
 
         elif 'search youtube' in query:
             speak('What you want to search on Youtube?')
-            youtube(takeCommand())
+            if youtube is None:
+                speak('Youtube search module is unavailable right now.')
+            else:
+                youtube(takeCommand())
         elif 'the time' in query:
             strTime = datetime.datetime.now().strftime("%H:%M:%S")
             speak(f'Sir, the time is {strTime}')
@@ -125,15 +147,14 @@ class Jarvis:
             speak('What do you want to search for?')
             search = takeCommand()
             url = 'https://google.com/search?q=' + search
-            webbrowser.get('chrome').open_new_tab(
-                url)
+            self.open_url(url)
             speak('Here is What I found for' + search)
 
         elif 'location' in query:
             speak('What is the location?')
             location = takeCommand()
             url = 'https://google.nl/maps/place/' + location + '/&amp;'
-            webbrowser.get('chrome').open_new_tab(url)
+            self.open_url(url)
             speak('Here is the location ' + location)
 
         elif 'your master' in query:
@@ -176,8 +197,7 @@ class Jarvis:
             screenshot()
 
         elif 'github' in query:
-            webbrowser.get('chrome').open_new_tab(
-                'https://github.com/gauravsingh9356')
+            self.open_url('https://github.com/gauravsingh9356')
 
         elif 'remember that' in query:
             speak("what should i remember sir")
@@ -196,7 +216,10 @@ class Jarvis:
 
         elif 'dictionary' in query:
             speak('What you want to search in your intelligent dictionary?')
-            translate(takeCommand())
+            if translate is None:
+                speak('Dictionary module is unavailable right now.')
+            else:
+                translate(takeCommand())
 
         elif 'news' in query:
             speak('Ofcourse sir..')
@@ -234,65 +257,51 @@ def wakeUpJARVIS():
     bot_.wishMe()
     while True:
         query = takeCommand().lower()
+        if query == 'none':
+            continue
         bot_.execute_query(query)
                
 
 if __name__ == '__main__':
-    
-    recognizer = cv2.face.LBPHFaceRecognizer_create() # Local Binary Patterns Histograms
-    recognizer.read('./Face-Recognition/trainer/trainer.yml')   #load trained model
-    cascadePath = "./Face-Recognition/haarcascade_frontalface_default.xml"
-    faceCascade = cv2.CascadeClassifier(cascadePath) #initializing haar cascade for object detection approach
+    try:
+        recognizer = cv2.face.LBPHFaceRecognizer_create()  # type: ignore[attr-defined]
+        recognizer.read('./Face-Recognition/trainer/trainer.yml')
+        cascade_path = "./Face-Recognition/haarcascade_frontalface_default.xml"
+        face_cascade = cv2.CascadeClassifier(cascade_path)
+        cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        cam.set(3, 640)
+        cam.set(4, 480)
+        minW = 0.1 * cam.get(3)
+        minH = 0.1 * cam.get(4)
 
-    font = cv2.FONT_HERSHEY_SIMPLEX #denotes the font type
+        while True:
+            ret, img = cam.read()
+            if not ret:
+                break
 
+            converted_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(
+                converted_image,
+                scaleFactor=1.2,
+                minNeighbors=5,
+                minSize=(int(minW), int(minH)),
+            )
 
-    id = 2 #number of persons you want to Recognize
+            for (x, y, w, h) in faces:
+                _, accuracy = recognizer.predict(converted_image[y:y + h, x:x + w])
+                if accuracy < 100:
+                    speak("Optical Face Recognition Done. Welcome")
+                    cam.release()
+                    cv2.destroyAllWindows()
+                    wakeUpJARVIS()
+                else:
+                    speak("Optical Face Recognition Failed")
+                    raise RuntimeError("Face not recognized")
 
-
-    names = ['','Gaurav']  #names, leave first empty bcz counter starts from 0
-
-
-    cam = cv2.VideoCapture(0, cv2.CAP_DSHOW) #cv2.CAP_DSHOW to remove warning
-    cam.set(3, 640) # set video FrameWidht
-    cam.set(4, 480) # set video FrameHeight
-
-    # Define min window size to be recognized as a face
-    minW = 0.1*cam.get(3)
-    minH = 0.1*cam.get(4)
-
-    # flag = True
-
-    while True:
-
-        ret, img =cam.read() #read the frames using the above created object
-
-        converted_image = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)  #The function converts an input image from one color space to another
-
-        faces = faceCascade.detectMultiScale( 
-            converted_image,
-            scaleFactor = 1.2,
-            minNeighbors = 5,
-            minSize = (int(minW), int(minH)),
-        )
-
-        for(x,y,w,h) in faces:
-
-            cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2) #used to draw a rectangle on any image
-
-            id, accuracy = recognizer.predict(converted_image[y:y+h,x:x+w]) #to predict on every single image
-
-            # Check if accuracy is less them 100 ==> "0" is perfect match 
-            if (accuracy < 100):
-                
-                # Do a bit of cleanup
-                speak("Optical Face Recognition Done. Welcome")
-                cam.release()
-                cv2.destroyAllWindows()
-                wakeUpJARVIS()
-            else:
-                speak("Optical Face Recognition Failed")
-                break;
+    except Exception:
+        # Fall back to voice mode if camera/recognizer setup fails.
+        speak("Starting without face recognition.")
+        wakeUpJARVIS()
 
 
     

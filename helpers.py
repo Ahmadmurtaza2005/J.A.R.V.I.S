@@ -37,12 +37,16 @@ def joke() -> None:
 
 def takeCommand() -> str:
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print('Listening...')
-        r.pause_threshold = 1
-        r.energy_threshold = 494
-        r.adjust_for_ambient_noise(source, duration=1.5)
-        audio = r.listen(source)
+    try:
+        with sr.Microphone() as source:
+            print('Listening...')
+            r.pause_threshold = 1
+            r.energy_threshold = 494
+            r.adjust_for_ambient_noise(source, duration=1.5)
+            audio = r.listen(source)
+    except Exception:
+        # Useful fallback on systems without PyAudio/mic setup.
+        return input("Type command: ")
 
     try:
         print('Recognizing..')
@@ -57,11 +61,18 @@ def takeCommand() -> str:
     return query
 
 def weather():
+    if not g or not g.latlng:
+        return
+
     api_url = "https://fcc-weather-api.glitch.me/api/current?lat=" + \
         str(g.latlng[0]) + "&lon=" + str(g.latlng[1])
 
-    data = requests.get(api_url)
-    data_json = data.json()
+    try:
+        data = requests.get(api_url, timeout=8)
+        data_json = data.json()
+    except Exception:
+        # Do not crash assistant startup if weather API is unavailable.
+        return
     if data_json['cod'] == 200:
         main = data_json['main']
         wind = data_json['wind']
