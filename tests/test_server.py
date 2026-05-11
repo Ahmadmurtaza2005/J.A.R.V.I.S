@@ -17,12 +17,20 @@ class TestServerRoutes(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), {"ok": True})
 
-    def test_root(self) -> None:
+    def test_root_is_jarvis_hud(self) -> None:
         r = self.client.get("/")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("text/html", r.headers.get("content-type", ""))
+        self.assertIn("J.A.R.V.I.S", r.text)
+        self.assertIn("CLOUD CORE ONLINE", r.text)
+
+    def test_api_status_json(self) -> None:
+        r = self.client.get("/api/status")
         self.assertEqual(r.status_code, 200)
         body = r.json()
         self.assertEqual(body.get("status"), "online")
-        self.assertIn("service", body)
+        self.assertEqual(body.get("service"), "J.A.R.V.I.S")
+        self.assertIn("timestamp_utc", body)
 
     def test_ui(self) -> None:
         r = self.client.get("/ui")
