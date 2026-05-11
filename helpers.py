@@ -6,6 +6,7 @@ import speech_recognition as sr
 import json
 import requests
 import geocoder
+import sys
 from difflib import get_close_matches
 
 
@@ -37,16 +38,22 @@ def joke() -> None:
 
 def takeCommand() -> str:
     r = sr.Recognizer()
+    r.dynamic_energy_threshold = True
+    r.energy_threshold = 250
     try:
         with sr.Microphone() as source:
             print('Listening...')
             r.pause_threshold = 1
-            r.energy_threshold = 494
-            r.adjust_for_ambient_noise(source, duration=1.5)
-            audio = r.listen(source)
+            r.adjust_for_ambient_noise(source, duration=0.8)
+            audio = r.listen(source, timeout=8, phrase_time_limit=7)
+    except sr.WaitTimeoutError:
+        print('No speech detected, retrying...')
+        return 'none'
     except Exception:
         # Useful fallback on systems without PyAudio/mic setup.
-        return input("Type command: ")
+        if sys.stdin and sys.stdin.isatty():
+            return input("Type command: ")
+        return 'none'
 
     try:
         print('Recognizing..')

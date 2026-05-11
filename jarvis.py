@@ -263,6 +263,12 @@ def wakeUpJARVIS():
                
 
 if __name__ == '__main__':
+    # Default to voice mode immediately. Face-recognition can be enabled with:
+    # python jarvis.py --face
+    if '--face' not in sys.argv:
+        wakeUpJARVIS()
+        sys.exit(0)
+
     try:
         recognizer = cv2.face.LBPHFaceRecognizer_create()  # type: ignore[attr-defined]
         recognizer.read('./Face-Recognition/trainer/trainer.yml')
