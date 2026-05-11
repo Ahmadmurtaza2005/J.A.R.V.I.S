@@ -1,0 +1,4 @@
+# Minimal deps for cloud deploy (Railway). Keeps Docker builds fast and reliable.
+# Full assistant with mic/camera: use requirements.txt locally.
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0

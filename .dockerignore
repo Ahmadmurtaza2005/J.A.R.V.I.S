@@ -1,0 +1,12 @@
+.git
+.github
+.cursor
+.venv
+.venv311
+__pycache__
+*.py[cod]
+*.pyd
+*.so
+.env
+*.log
+assets

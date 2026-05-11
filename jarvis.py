@@ -101,12 +101,10 @@ class Jarvis:
                 engine.setProperty('voice', voices[0].id)
             speak("Hello Sir, I have switched my voice. How is it?")
 
-        if 'jarvis are you there' in query:
+        elif 'jarvis are you there' in query:
             speak("Yes Sir, at your service")
-        if 'jarvis who made you' in query:
+        elif 'jarvis who made you' in query:
             speak("Yes Sir, my master build me in AI")
-            
-         
 
         elif 'open youtube' in query:
             self.open_url('https://youtube.com')
@@ -162,7 +160,7 @@ class Jarvis:
                 speak('Gaurav is my master. He created me couple of days ago')
             elif platform == "linux" or platform == "linux2":
                 name = getpass.getuser()
-                speak(name, 'is my master. He is running me right now')
+                speak(f"{name} is my master. He is running me right now")
 
         elif 'your name' in query:
             speak('My name is JARVIS')
@@ -251,13 +249,16 @@ class Jarvis:
             except Exception as e:
                 speak('Sorry sir, Not able to send email at the moment')
 
+        else:
+            speak("I did not understand that command, Sir. Please try again.")
+
 
 def wakeUpJARVIS():
     bot_ = Jarvis()
     bot_.wishMe()
     while True:
         query = takeCommand().lower()
-        if query == 'none':
+        if not query or query == "none":
             continue
         bot_.execute_query(query)
                
