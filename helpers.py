@@ -29,8 +29,9 @@ def cpu() -> None:
     speak("CPU is at"+usage)
 
     battery = psutil.sensors_battery()
-    speak("battery is at")
-    speak(battery.percent)
+    if battery is not None:
+        speak("battery is at")
+        speak(battery.percent)
 
 def joke() -> None:
     for i in range(5):
@@ -68,28 +69,39 @@ def takeCommand() -> str:
     return query
 
 def weather():
+    """Current weather via Open-Meteo (no API key required)."""
     if not g or not g.latlng:
         return
 
-    api_url = "https://fcc-weather-api.glitch.me/api/current?lat=" + \
-        str(g.latlng[0]) + "&lon=" + str(g.latlng[1])
-
+    lat, lon = g.latlng[0], g.latlng[1]
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        "&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
+        "&wind_speed_unit=ms"
+    )
     try:
-        data = requests.get(api_url, timeout=8)
-        data_json = data.json()
+        resp = requests.get(url, timeout=12)
+        resp.raise_for_status()
+        data = resp.json()
     except Exception:
-        # Do not crash assistant startup if weather API is unavailable.
         return
-    if data_json['cod'] == 200:
-        main = data_json['main']
-        wind = data_json['wind']
-        weather_desc = data_json['weather'][0]
-        speak(str(data_json['coord']['lat']) + 'latitude' + str(data_json['coord']['lon']) + 'longitude')
-        speak('Current location is ' + data_json['name'] + data_json['sys']['country'] + 'dia')
-        speak('weather type ' + weather_desc['main'])
-        speak('Wind speed is ' + str(wind['speed']) + ' metre per second')
-        speak('Temperature: ' + str(main['temp']) + 'degree celcius')
-        speak('Humidity is ' + str(main['humidity']))
+
+    current = data.get("current") or {}
+    temp = current.get("temperature_2m")
+    hum = current.get("relative_humidity_2m")
+    wind = current.get("wind_speed_10m")
+    code = current.get("weather_code")
+
+    speak(f"Approximate coordinates {lat} latitude, {lon} longitude.")
+    if temp is not None:
+        speak(f"Temperature about {round(float(temp), 1)} degrees Celsius.")
+    if hum is not None:
+        speak(f"Humidity about {int(hum)} percent.")
+    if wind is not None:
+        speak(f"Wind speed about {round(float(wind), 1)} metres per second.")
+    if code is not None:
+        speak(f"Weather code {int(code)} from the forecast model.")
 
 
 def translate(word):

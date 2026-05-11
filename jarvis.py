@@ -1,16 +1,25 @@
-import pyttsx3
-import wikipedia
-import webbrowser
-import datetime
 import os
 import sys
-import smtplib
-from news import speak_news, getNewsUrl
-from helpers import *
-from sys import platform
-import os
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
+import datetime
 import getpass
+import smtplib
+import webbrowser
+
 import cv2
+import pyttsx3
+import wikipedia
+from news import getNewsUrl, speak_news
+from sys import platform
+
+from helpers import *
 
 try:
     from OCR import OCR
