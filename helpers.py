@@ -1,3 +1,4 @@
+import os
 import pyttsx3
 import pyautogui
 import psutil
@@ -9,7 +10,14 @@ import geocoder
 import sys
 from difflib import get_close_matches
 
+# Set JARVIS_MIC_INDEX=0 (etc.) if Jarvis listens on the wrong device (see first "Listening" printout).
+_MIC_ENV = os.environ.get("JARVIS_MIC_INDEX")
+try:
+    _MIC_INDEX = int(_MIC_ENV) if _MIC_ENV is not None and str(_MIC_ENV).strip() != "" else None
+except ValueError:
+    _MIC_INDEX = None
 
+_MIC_NAMES_LOGGED = False
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[0].id)
@@ -38,35 +46,57 @@ def joke() -> None:
         speak(pyjokes.get_jokes()[i])
 
 def takeCommand() -> str:
+    """Listen once for a voice command. Tuned for sensitivity on typical laptop mics."""
+    global _MIC_NAMES_LOGGED
     r = sr.Recognizer()
     r.dynamic_energy_threshold = True
-    r.energy_threshold = 250
+    mic_kw: dict = {}
+    if _MIC_INDEX is not None:
+        mic_kw["device_index"] = _MIC_INDEX
+
+    if not _MIC_NAMES_LOGGED:
+        _MIC_NAMES_LOGGED = True
+        try:
+            names = sr.Microphone.list_microphone_names()
+            print("Microphones (use JARVIS_MIC_INDEX=N to pick one):", names)
+            if _MIC_INDEX is not None:
+                print(f"Using device_index={_MIC_INDEX}: {names[_MIC_INDEX]!r}")
+        except Exception as exc:
+            print("Could not list microphones:", exc)
+
     try:
-        with sr.Microphone() as source:
-            print('Listening...')
-            r.pause_threshold = 1
-            r.adjust_for_ambient_noise(source, duration=0.8)
-            audio = r.listen(source, timeout=8, phrase_time_limit=7)
+        with sr.Microphone(**mic_kw) as source:
+            print("Listening...")
+            r.pause_threshold = 0.5
+            r.adjust_for_ambient_noise(source, duration=1.0)
+            # Softer voices / farther mics: bias threshold down after calibration
+            r.energy_threshold = max(45, int(r.energy_threshold * 0.55))
+            audio = r.listen(source, timeout=18, phrase_time_limit=14)
     except sr.WaitTimeoutError:
-        print('No speech detected, retrying...')
-        return 'none'
-    except Exception:
-        # Useful fallback on systems without PyAudio/mic setup.
+        print("(No speech detected — speak a bit louder or set JARVIS_MIC_INDEX.)")
+        return "none"
+    except OSError as exc:
+        print("Microphone error:", exc)
+        return "none"
+    except Exception as exc:
+        print("Audio input error:", exc)
         if sys.stdin and sys.stdin.isatty():
-            return input("Type command: ")
-        return 'none'
+            return input("Type command: ").strip() or "none"
+        return "none"
 
-    try:
-        print('Recognizing..')
-        query = r.recognize_google(audio, language='en-in')
-        print(f'User said: {query}\n')
-
-    except Exception as e:
-        # print(e)
-
-        print('Say that again please...')
-        return 'None'
-    return query
+    for lang in ("en-US", "en-IN", "en-GB"):
+        try:
+            print("Recognizing..")
+            query = r.recognize_google(audio, language=lang)
+            print(f"User said ({lang}): {query}\n")
+            return query.strip()
+        except sr.UnknownValueError:
+            continue
+        except sr.RequestError as exc:
+            print("Speech recognition service error:", exc)
+            return "none"
+    print("Could not understand audio — try again.")
+    return "none"
 
 def weather():
     """Current weather via Open-Meteo (no API key required)."""

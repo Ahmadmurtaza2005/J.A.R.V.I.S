@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 
-app = FastAPI(title="J.A.R.V.I.S", version="1.0")
+app = FastAPI(title="Jarvis", version="1.0")
 
 
 def _dashboard_html() -> str:
@@ -20,7 +20,7 @@ def _dashboard_html() -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>J.A.R.V.I.S · System Interface</title>
+  <title>Jarvis · System Interface</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
@@ -145,7 +145,7 @@ def _dashboard_html() -> str:
   <div class="wrap">
     <header>
       <div class="arc" aria-hidden="true"></div>
-      <h1>J.A.R.V.I.S</h1>
+      <h1>JARVIS</h1>
       <p class="subtitle">JUST A RATHER VERY INTELLIGENT SYSTEM</p>
       <div class="status-row">
         <span class="pill"><span class="dot"></span> CLOUD CORE ONLINE</span>
@@ -158,7 +158,7 @@ def _dashboard_html() -> str:
         <p>This URL is your <strong>deployed control shell</strong> on Railway: a lightweight web
         process that keeps the service <em>alive</em> and shows system status. It is not the
         full desktop assistant.</p>
-        <p style="margin-top:0.75rem">The <strong>real</strong> Jarvis (microphone, speech, Wikipedia,
+        <p style="margin-top:0.75rem">The <strong>real</strong> Jarvis assistant (microphone, speech, Wikipedia,
         browser control, optional camera) runs as <code>python jarvis.py</code> on your own computer.</p>
       </section>
       <section class="panel">
@@ -168,7 +168,13 @@ def _dashboard_html() -> str:
           <li><code style="display:block;margin:0.5rem 0 0 0">pip install -r requirements.txt</code></li>
           <li><code style="display:block;margin:0.5rem 0 0 0">python jarvis.py</code></li>
         </ul>
-        <p style="margin-top:1rem;font-size:0.78rem;color:var(--muted)">Optional: set <code>NEWSAPI_KEY</code> in <code>.env</code> for NewsAPI; otherwise BBC RSS is used. Weather uses Open-Meteo (no key).</p>
+        <p style="margin-top:1rem;font-size:0.78rem;color:var(--muted)">
+          <strong>News API key:</strong> Only you have this key. Get a free one at
+          <a href="https://newsapi.org/register" style="color:var(--cyan)">newsapi.org/register</a>.
+          In <strong>Railway → Variables → + New Variable</strong> set name <code>NEWSAPI_KEY</code>
+          and paste the value. On your PC, copy <code>env.example</code> to <code>.env</code> with the same variable for <code>python jarvis.py</code>.
+          If unset, news uses BBC RSS (no key). Weather uses Open-Meteo (no key).
+        </p>
       </section>
     </div>
     <div class="links">
@@ -187,12 +193,16 @@ def health() -> dict[str, bool]:
 
 @app.get("/api/status")
 def api_status() -> JSONResponse:
+    news_configured = bool(
+        (os.environ.get("NEWSAPI_KEY") or os.environ.get("NEWSAPI_ORG_KEY") or "").strip()
+    )
     return JSONResponse(
         {
             "status": "online",
-            "service": "J.A.R.V.I.S",
+            "service": "Jarvis",
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "voice_assistant": "Run on your PC: python jarvis.py",
+            "newsapi_configured": news_configured,
         }
     )
 

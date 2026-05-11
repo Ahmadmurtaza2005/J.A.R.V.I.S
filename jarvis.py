@@ -79,7 +79,7 @@ class Jarvis:
             speak('Good Evening SIR')
 
         weather()
-        speak('I am JARVIS. Please tell me how can I help you SIR?')
+        speak('I am Jarvis. Please tell me how can I help you SIR?')
 
     def sendEmail(self, to, content) -> None:
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -172,12 +172,12 @@ class Jarvis:
                 speak(f"{name} is my master. He is running me right now")
 
         elif 'your name' in query:
-            speak('My name is JARVIS')
+            speak('My name is Jarvis')
         elif 'who made you' in query:
             speak('I was created by my AI master in 2021')
             
         elif 'stands for' in query:
-            speak('J.A.R.V.I.S stands for JUST A RATHER VERY INTELLIGENT SYSTEM')
+            speak('Jarvis stands for Just A Rather Very Intelligent System')
         elif 'open code' in query:
             if platform == "win32":
                 os.startfile(

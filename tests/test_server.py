@@ -21,7 +21,7 @@ class TestServerRoutes(unittest.TestCase):
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
         self.assertIn("text/html", r.headers.get("content-type", ""))
-        self.assertIn("J.A.R.V.I.S", r.text)
+        self.assertIn("JARVIS", r.text)
         self.assertIn("CLOUD CORE ONLINE", r.text)
 
     def test_api_status_json(self) -> None:
@@ -29,14 +29,16 @@ class TestServerRoutes(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         body = r.json()
         self.assertEqual(body.get("status"), "online")
-        self.assertEqual(body.get("service"), "J.A.R.V.I.S")
+        self.assertEqual(body.get("service"), "Jarvis")
         self.assertIn("timestamp_utc", body)
+        self.assertIn("newsapi_configured", body)
+        self.assertIsInstance(body.get("newsapi_configured"), bool)
 
     def test_ui(self) -> None:
         r = self.client.get("/ui")
         self.assertEqual(r.status_code, 200)
         self.assertIn("text/html", r.headers.get("content-type", ""))
-        self.assertIn("J.A.R.V.I.S", r.text)
+        self.assertIn("JARVIS", r.text)
 
 
 if __name__ == "__main__":
