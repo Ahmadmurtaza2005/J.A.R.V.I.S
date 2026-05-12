@@ -11,6 +11,7 @@ except ImportError:
 import datetime
 import getpass
 import smtplib
+import time
 import webbrowser
 
 import cv2
@@ -265,6 +266,9 @@ class Jarvis:
 def wakeUpJARVIS():
     bot_ = Jarvis()
     bot_.wishMe()
+    # Avoid listening while Jarvis is still finishing TTS through speakers (helps mic pick you up).
+    print("Waiting a moment — then speak clearly when you see Listening...")
+    time.sleep(2.0)
     while True:
         query = takeCommand().lower()
         if not query or query == "none":

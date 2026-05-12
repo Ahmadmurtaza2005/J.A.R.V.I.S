@@ -4,6 +4,7 @@ geocoder
 opencv-contrib-python
 Pillow
 psutil
+PyAudio
 PyAutoGUI
 pyjokes
 pyttsx3
